@@ -1,89 +1,71 @@
-let sessions = [
-    {
-        id: 1,
-        title: "Passing Training",
-        date: "2026-04-22",
-        players: 14
-    },
-    {
-        id: 2,
-        title: "Shooting Training",
-        date: "2026-04-24",
-        players: 12
-    }
-];
+const Session = require("../models/Session");
 
-const getAllSessions = (req, res) => {
-    res.status(200).json(sessions);
+// GET ALL
+exports.getSessions = async (req, res) => {
+    try {
+        const sessions = await Session.find();
+        res.json(sessions);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
-const createSession = (req, res) => {
-    const { title, date, players } = req.body || {};
+// GET ONE
+exports.getSessionById = async (req, res) => {
+    try {
+        const session = await Session.findById(req.params.id);
 
-    if (!title || !date || players === undefined) {
-        return res.status(400).json({
-            error: "title, date and players are required"
-        });
+        if (!session) {
+            return res.status(404).json({ error: "Session not found" });
+        }
+
+        res.json(session);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-
-    const newSession = {
-        id: sessions.length + 1,
-        title,
-        date,
-        players
-    };
-
-    sessions.push(newSession);
-
-    res.status(201).json(newSession);
 };
 
-const updateSession = (req, res) => {
-    const id = parseInt(req.params.id);
-    const { title, date, players } = req.body || {};
-
-    if (!title || !date || players === undefined) {
-        return res.status(400).json({
-            error: "title, date and players are required"
-        });
+// CREATE
+exports.createSession = async (req, res) => {
+    try {
+        const newSession = new Session(req.body);
+        const savedSession = await newSession.save();
+        res.status(201).json(savedSession);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
     }
-
-    const session = sessions.find((s) => s.id === id);
-
-    if (!session) {
-        return res.status(404).json({
-            error: "session not found"
-        });
-    }
-
-    session.title = title;
-    session.date = date;
-    session.players = players;
-
-    res.status(200).json(session);
 };
 
-const deleteSession = (req, res) => {
-    const id = parseInt(req.params.id);
+// UPDATE
+exports.updateSession = async (req, res) => {
+    try {
+        const updated = await Session.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
 
-    const sessionIndex = sessions.findIndex((s) => s.id === id);
+        if (!updated) {
+            return res.status(404).json({ error: "Session not found" });
+        }
 
-    if (sessionIndex === -1) {
-        return res.status(404).json({
-            error: "session not found"
-        });
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-
-    sessions.splice(sessionIndex, 1);
-
-    res.status(200).json({
-        message: "session deleted"
-    });
 };
 
-module.exports = {
-    getAllSessions,
-    createSession,
-    updateSession,
-    deleteSession
+// DELETE
+exports.deleteSession = async (req, res) => {
+    try {
+        const deleted = await Session.findByIdAndDelete(req.params.id);
+
+        if (!deleted) {
+            return res.status(404).json({ error: "Session not found" });
+        }
+
+        res.json({ message: "Session deleted" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
