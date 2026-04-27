@@ -10,10 +10,6 @@ const sessionSchema = new mongoose.Schema(
             type: String,
             required: true
         },
-        players: {
-            type: Number,
-            required: true
-        },
         focusArea: {
             type: String,
             required: true
@@ -22,7 +18,13 @@ const sessionSchema = new mongoose.Schema(
             type: String,
             enum: ["Low", "Medium", "High"],
             required: true
-        }
+        },
+        players: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Player"
+            }
+        ]
     },
     {
         timestamps: true
