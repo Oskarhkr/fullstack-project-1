@@ -1,121 +1,187 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from "react";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [sessions, setSessions] = useState([]);
+  const [players, setPlayers] = useState([]);
+
+  const [title, setTitle] = useState("");
+
+  const [playerName, setPlayerName] = useState("");
+  const [playerPosition, setPlayerPosition] = useState("");
+
+  const [selectedPlayers, setSelectedPlayers] = useState([]);
+
+  // FETCH
+  const fetchSessions = async () => {
+    const res = await fetch("http://localhost:3000/api/sessions");
+    const data = await res.json();
+    setSessions(data);
+  };
+
+  const fetchPlayers = async () => {
+    const res = await fetch("http://localhost:3000/api/players");
+    const data = await res.json();
+    setPlayers(data);
+  };
+
+  useEffect(() => {
+    fetchSessions();
+    fetchPlayers();
+  }, []);
+
+  // SELECT PLAYER
+  const handlePlayerSelect = (id) => {
+    if (selectedPlayers.includes(id)) {
+      setSelectedPlayers(selectedPlayers.filter((p) => p !== id));
+    } else {
+      setSelectedPlayers([...selectedPlayers, id]);
+    }
+  };
+
+  // CREATE PLAYER
+  const createPlayer = async () => {
+    await fetch("http://localhost:3000/api/players", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: playerName,
+        age: 20,
+        position: playerPosition,
+      }),
+    });
+
+    setPlayerName("");
+    setPlayerPosition("");
+    fetchPlayers();
+  };
+
+  // 🔴 DELETE PLAYER
+  const deletePlayer = async (id) => {
+    await fetch(`http://localhost:3000/api/players/${id}`, {
+      method: "DELETE",
+    });
+
+    setPlayers(players.filter((p) => p._id !== id));
+  };
+
+  // CREATE SESSION
+  const createSession = async () => {
+    const res = await fetch("http://localhost:3000/api/sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        date: "2026-04-30",
+        focusArea: "Passing",
+        intensityLevel: "High",
+        players: selectedPlayers,
+      }),
+    });
+
+    const data = await res.json();
+    setSessions([data, ...sessions]);
+
+    setTitle("");
+    setSelectedPlayers([]);
+  };
+
+  // DELETE SESSION
+  const deleteSession = async (id) => {
+    await fetch(`http://localhost:3000/api/sessions/${id}`, {
+      method: "DELETE",
+    });
+
+    setSessions(sessions.filter((s) => s._id !== id));
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div style={{ padding: "20px" }}>
+      <h1>Football Training Tracker</h1>
 
-      <div className="ticks"></div>
+      <h2>Add Player</h2>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
+      <input
+        placeholder="Player name"
+        value={playerName}
+        onChange={(e) => setPlayerName(e.target.value)}
+      />
+
+      <input
+        placeholder="Position"
+        value={playerPosition}
+        onChange={(e) => setPlayerPosition(e.target.value)}
+      />
+
+      <button onClick={createPlayer}>Add Player</button>
+
+      <h3>Players</h3>
+
+      {players.map((p) => (
+        <div key={p._id}>
+          {p.name} ({p.position})
+          <button onClick={() => deletePlayer(p._id)}>
+            Delete
+          </button>
+        </div>
+      ))}
+
+      <hr />
+
+      <h2>Create Session</h2>
+
+      <input
+        placeholder="Session title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+
+      <h3>Select Players</h3>
+
+      {players.map((p) => (
+        <div key={p._id}>
+          <label>
+            <input
+              type="checkbox"
+              onChange={() => handlePlayerSelect(p._id)}
+            />
+            {p.name} ({p.position})
+          </label>
+        </div>
+      ))}
+
+      <button onClick={createSession}>Add Session</button>
+
+      <hr />
+
+      <h2>Sessions</h2>
+
+      {sessions.map((s) => (
+        <div key={s._id}>
+          <strong>{s.title}</strong>
+
           <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
+            {s.players && s.players.length > 0 ? (
+              s.players.map((p) => (
+                <li key={p._id}>
+                  {p.name} - {p.position}
+                </li>
+              ))
+            ) : (
+              <li>No players</li>
+            )}
           </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <button onClick={() => deleteSession(s._id)}>
+            Delete
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
-export default App
+export default App;
