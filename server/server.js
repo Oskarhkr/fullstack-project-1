@@ -1,28 +1,30 @@
-require("dotenv").config();
-
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
+const dotenv = require("dotenv");
+const connectDB = require("./config/db");
 
 const sessionRoutes = require("./routes/sessionRoutes");
 const playerRoutes = require("./routes/playerRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
+
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// 🔥 VIKTIGT
+connectDB();
+
 app.use(cors());
 app.use(express.json());
 
-// ROUTES
+app.get("/", (req, res) => {
+  res.send("Football Training Tracker API is running");
+});
+
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/players", playerRoutes);
+app.use("/api/attendance", attendanceRoutes);
 
-// CONNECT DB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.log(err));
-
-// START SERVER
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
